@@ -1,0 +1,84 @@
+const int xPin = A0;
+const int yPin = A1;
+const int motor1DPin1 = 13;
+const int motor1DPin2 = 12;
+const int motor2DPin1 = 11;
+const int motor2DPin2 = 10;
+const int speedPin = 3;
+int xVal, yVal, yDist, xDist;
+
+void setup() {
+  // put your setup code here, to run once:
+  for (int i = 13; i > motor2DPin2; i--) {
+    pinMode(i, OUTPUT);
+  }
+  pinMode(xPin, INPUT);
+  pinMode(yPin, INPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  xVal = analogRead(xPin); // Read the values of the joystick
+  yVal = analogRead(yPin);
+
+  Serial.print("X Value: "); // Send values to the console
+  Serial.print(xVal);
+
+  Serial.print(", Y Value: ");
+  Serial.println(yVal);
+
+  if (yVal > 572) {       // Find the distance of x & y from the origin of the joystick, 60 units from the origin will be considered the origin
+    yDist = 1024 - yVal;
+  }
+  else if (yVal < 462) {
+    yDist = yVal;
+  }
+  else {
+    yDist = 0;
+  }
+
+  Serial.print(", Y Distance: "); // Sends distance to the console
+  Serial.println(yDist);
+  Motorcontrol();
+
+}
+
+void Motorcontrol() {
+  if (xVal > 562 && yVal > 512) {
+    analogWrite(speedPin, map(yDist, 0, 512, 0, 255));
+    digitalWrite(motor1DPin1, HIGH);
+    digitalWrite(motor1DPin2, LOW);
+    digitalWrite(motor1DPin1, LOW);
+    digitalWrite(motor1DPin2, HIGH);
+  }
+  else if (xVal < 462 && yVal > 512) {
+    analogWrite(speedPin, map(yDist, 0, 512, 0, 255));
+    digitalWrite(motor1DPin1, LOW);
+    digitalWrite(motor1DPin2, HIGH);
+    digitalWrite(motor1DPin1, HIGH);
+    digitalWrite(motor1DPin2, LOW);
+  }
+  else if (xVal > 562 && yVal < 512) {
+    analogWrite(speedPin, map(yDist, 0, 512, 0, 255));
+    digitalWrite(motor1DPin1, LOW);
+    digitalWrite(motor1DPin2, HIGH);
+    digitalWrite(motor1DPin1, HIGH);
+    digitalWrite(motor1DPin2, LOW);
+
+  }
+  else if (xVal < 462 && yVal < 512) {
+    analogWrite(speedPin, map(yDist, 0, 512, 0, 255));
+    digitalWrite(motor1DPin1, HIGH);
+    digitalWrite(motor1DPin2, LOW);
+    digitalWrite(motor1DPin1, LOW);
+    digitalWrite(motor1DPin2, HIGH);
+  }
+  else {
+    analogWrite(speedPin, 0);
+    digitalWrite(motor1DPin1, LOW);
+    digitalWrite(motor1DPin2, LOW);
+    digitalWrite(motor1DPin1, LOW);
+    digitalWrite(motor1DPin2, LOW);
+  }
+}
