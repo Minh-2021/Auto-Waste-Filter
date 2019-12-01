@@ -1,11 +1,12 @@
-const int xPin = A0;
+const int xPin = A0; // X and Y pin of the joystick, respectively
 const int yPin = A1;
-const int motor1DPin1 = 13;
+const int motor1DPin1 = 13; // Direction pins of the motor driver / H-bridge
 const int motor1DPin2 = 12;
 const int motor2DPin1 = 11;
 const int motor2DPin2 = 10;
-const int speedPin = 3;
-int xVal, yVal, yDist, xDist;
+const int speedPinA = 3; // Pins controls the speed of the motors
+const int speedPinB = 5;
+int xVal, yVal, yDist, xDist; // Stores the readings of the joystick(s) and calculated variables
 
 void setup() {
   // put your setup code here, to run once:
