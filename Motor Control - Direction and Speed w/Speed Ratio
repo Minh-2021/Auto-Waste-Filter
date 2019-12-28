@@ -11,7 +11,7 @@ int xVal, yVal, yDist, xDist, motorSpeedLeft, motorSpeedRight;
 float speedRatio;
 void setup() {
   // put your setup code here, to run once:
-  for (int i = 13; i > motor2DPin2; i--) {
+  for (int i = 13; i >= motor2DPin2; i--) {
     pinMode(i, OUTPUT);
   }
   pinMode(speedPin1, OUTPUT);
