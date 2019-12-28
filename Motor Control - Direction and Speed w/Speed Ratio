@@ -39,13 +39,14 @@ void loop() {
   Serial.print(", Y Distance: ");
   Serial.println(yDist);
   speedRatio = 1 - map(xDist, 0, 512, 0, 500) * .001; // Finds the ratio of the speed of the motors by using the distance of the Joystick from the center
+  // Ratio is 1:1 to 1:2
   if (xVal > 512) { // Turning right
     motorSpeedRight = map(xDist, 0, 512, 0, 255);
-    motorSpeedLeft = motorSpeedRight * speedRatio; 
+    motorSpeedLeft = round(motorSpeedRight * speedRatio); 
   }
   else if (xVal < 512) { // Turning Left
     motorSpeedLeft = map(xDist, 0 , 512, 0, 255);
-    motorSpeedRight = motorSpeedLeft * speedRatio;
+    motorSpeedRight = round(motorSpeedLeft * speedRatio);
   }
   Motorcontrol();
 }
