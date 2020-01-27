@@ -1,0 +1,45 @@
+const int trigPin = 9;
+const int echoPin = 10;
+
+short duration;
+double distance;
+float totalDuration;
+bool trashDetect = false;
+const char detectString[] = "Trash";
+const char address[] = "10001";
+void setup() {
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  digitalWrite(trigPin, LOW);
+  
+}
+void loop() {
+  // put your main code here, to run repeatedly:
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration * .034/2;
+  Serial.print("Distance: ");
+  Serial.println(distance);
+  if(distance <= 4.5){
+    totalDuration = totalDuration + duration*0.000001;
+    } 
+  else{
+    totalDuration = 0;
+    }
+
+  if(totalDuration >= 30 && trashDetect == false){
+    //radio.write(&detectString, sizeof(detectString);
+    trashDetect = true;
+    }
+  else if(totalDuration == 0){
+    //radio.write(&detectString, sizeof(detectString);
+    trashDetect = false;
+    }
+}
