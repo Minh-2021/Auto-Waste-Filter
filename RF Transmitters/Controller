@@ -63,7 +63,7 @@ void loop() {
   }
   radio.write(&toSend, sizeof(toSend));
   radio.startListening();
-  delay(200);
+  delay(4);
   if (radio.available()) {
     radio.read(&recieve, sizeof(recieve));
     ledWrite(ledPinA, recieve.ledA);
