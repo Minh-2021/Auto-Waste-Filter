@@ -1,0 +1,89 @@
+#include <nRF24L01.h>
+#include <RF24.h>
+#include <SPI.h>
+#include <Servo.h>
+Servo motorA;
+Servo motorB;
+RF24 radio(9, 10); // CE, CSN
+const byte addressA[5] = "10001"; // Converts string into char into a byte useable as an address
+const byte addressB[5] = "01010";
+const int xPin = A0;
+const int yPin = A1;
+const int ledPinA = 2;
+const int ledPinB = 3;
+struct storedData {
+  int xVal, yVal, yDist, xDist;
+  float speedRatio;
+};
+struct toSend { // Data to send structure
+  int motorSpeedLeft, motorSpeedRight;
+};
+struct toRecieve { // Data to recieve for LED's
+  bool ledA, ledB;
+};
+
+struct storedData data = {128, 128, 0, 0, 1}; // Default data
+struct toSend toSend = {0, 0};
+struct toRecieve recieve = {false, false};
+void setup() {
+  // put your setup code here, to run once:
+  radio.begin();
+  pinMode(xPin, INPUT);
+  pinMode(yPin, INPUT);
+  radio.openWritingPipe(addressA); // Address to write speed
+  radio.openReadingPipe(1, addressB); //Address to recieve LED states
+  radio.stopListening();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  data.xVal = analogRead(xPin); // Read the values of the joystick
+  data.yVal = analogRead(yPin);
+
+  Serial.print("X Value: "); // Send values to the console
+  Serial.print(data.xVal);
+
+  Serial.print(", Y Value: ");
+  Serial.println(data.yVal);
+  data.yDist = Distancefind(data.yVal);
+  data.xDist = Distancefind(data.xVal);
+
+  Serial.print("X Distance: "); // Sends distance to the console
+  Serial.print(data.xDist);
+  Serial.print(", Y Distance: ");
+  Serial.println(data.yDist);
+  data.speedRatio = 1 - map(data.xDist, 0, 512, 0, 500) * .001; // Finds the ratio of the speed of the motors by using the distance of the Joystick from the center, atmost 1:2
+  if (data.xVal > 512) { // Turning right
+    toSend.motorSpeedRight = map(data.xDist, 0, 512, 0, 180);
+    toSend.motorSpeedLeft = round(toSend.motorSpeedRight * data.speedRatio);
+  }
+  else if (data.xVal < 512) { // Turning Left
+    toSend.motorSpeedLeft = map(data.xDist, 0 , 512, 0, 180);
+    toSend.motorSpeedRight = round(toSend.motorSpeedLeft * data.speedRatio);
+  }
+  radio.write(&toSend, sizeof(toSend));
+  if (radio.available()) {
+    radio.read(&recieve, sizeof(recieve));
+    ledWrite(ledPinA, recieve.ledA);
+    ledWrite(ledPinB, recieve.ledB);
+  }
+}
+
+int Distancefind(int value) {
+  int distance;
+  if (value > 572) {
+    distance = 1024 - value;
+  }
+  else if (value < 452) {
+    distance = value;
+  }
+  return distance;
+}
+void ledWrite(int pin, bool value) {
+  if (value == true) {
+    digitalWrite(pin, HIGH);
+  }
+  else {
+    digitalWrite(pin, LOW);
+  }
+}
