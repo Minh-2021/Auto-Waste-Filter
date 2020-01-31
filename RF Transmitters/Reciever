@@ -1,38 +1,107 @@
-//Include Libraries
-#include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
-
-//create an RF24 object
-RF24 radio(9, 8);  // CE, CSN
-
-//address through which two modules communicate.
-const byte address[6] = "00001";
-
-void setup()
-{
-  while (!Serial);
-    Serial.begin(9600);
-  
+#include<SPI.h>
+#include <Servo.h>
+Servo motorA;
+Servo motorB;
+RF24 radio(9, 8); // CE, CSN
+short timeRecieve, timeRun; // These variables allow us to determine whether theb oat has lost communications with the controller
+const int trigPinA = 5;
+const int echoPinA = 4;
+const int trigPinB = 7;
+const int echoPinB = 6;
+short durationA, durationB; // A and B correspond to each Ultrasonic(US) sensor
+double distanceA, distanceB;
+float totalDurationA, totalDurationB;
+bool trashDetect = false;
+const byte addressA[] = "10001";
+const byte addressB[] = "01010";
+struct dataRecieve {
+  int motorSpeedLeft, motorSpeedRight;
+};
+struct dataSend {
+  bool trashLEDA, trashLEDB; //LEDA is the US sensor in the back, LEDB is the US sensor in the front
+};
+struct dataSend data = {false, false};
+struct dataRecieve value = {0, 0};
+void setup() {
+  // put your setup code here, to run once:
   radio.begin();
-  
-  //set the address
-  radio.openReadingPipe(0, address);
-  
-  //Set module as receiver
+  motorA.attach(7, 1000, 2000); // Right motor
+  motorB.attach(6, 1000, 2000); // Left motor
+  radio.openReadingPipe(1, addressA); // Address open to recieve speeds for the motor
+  radio.openWritingPipe(addressB); // Address open to send detection of trash by US Sensor
   radio.startListening();
+  pinMode(trigPinA, OUTPUT);
+  pinMode(echoPinA, INPUT);
+  pinMode(trigPinB, OUTPUT);
+  pinMode(echoPinB, INPUT);
+  digitalWrite(trigPinA, LOW);
+  digitalWrite(trigPinB, LOW);
+  //motorA.attach(); // Brushless Motors, need analog output
+  //motorB.attach();
 }
 
-void loop()
-{
-  //Read the data if available in buffer
-  if (radio.available())
-  {
-    Serial.println("Data is Available!");
-    char text[32] = {0};
-    radio.read(&text, sizeof(text));
-    Serial.println(text);
-    int num = text;
-    Serial.println(num);
+void loop() {
+  if (radio.available()) {
+    radio.read(&value, sizeof(value)); // Read the data sent by controller
+    timeRecieve = millis();
   }
+  Motorcontrol(); // Control motors according to values
+  durationA = ultrasonicDetection(trigPinA, echoPinA); // Get feedback from the US sensors
+  distanceA = durationA * 0.034 / 2;
+  durationB = ultrasonicDetection(trigPinB, echoPinB);
+  distanceB = durationB * 0.034 / 2;
+
+  totalDurationA = totalDuration(distanceA, durationA, totalDurationA); // Get the total duration that the
+  totalDurationB = totalDuration(distanceB, durationB, totalDurationB);
+  if (totalDurationA >= 30) { //Determine whether to turn on the LED's
+    data.trashLEDA = true;
+  }
+  else {
+    data.trashLEDA = false;
+  }
+
+  if (totalDurationB >= 30) {
+    data.trashLEDB = true;
+  }
+  else {
+    data.trashLEDB = false;
+  }
+
+  radio.stopListening(); // Begin writing process
+  delayMicroseconds(10);
+  radio.write(&data, sizeof(data)); // Write data to Controller
+  delayMicroseconds(10);
+  radio.startListening();
+  timeRun = millis();
+  if (timeRun - timeRecieve > 1000) { // If lost communications for more than 1 second, reset to default values
+    motorA.write(0);
+    motorB.write(0);
+  }
+}
+
+void Motorcontrol() {
+  motorA.write(value.motorSpeedRight);
+  motorB.write(value.motorSpeedLeft);
+}
+unsigned int ultrasonicDetection(int trigPin, int echoPin) {
+
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  return pulseIn(echoPin, HIGH);
+}
+float totalDuration(double distance, short duration, float totalDuration) {
+  if (distance <= 4.5) {
+    totalDuration = totalDuration + duration * 0.000001;
+  }
+  else {
+    totalDuration = totalDuration - 2;
+  }
+  return totalDuration;
 }
