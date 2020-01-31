@@ -40,18 +40,9 @@ void loop() {
   data.xVal = analogRead(xPin); // Read the values of the joystick
   data.yVal = analogRead(yPin);
 
-  Serial.print("X Value: "); // Send values to the console
-  Serial.print(data.xVal);
-
-  Serial.print(", Y Value: ");
-  Serial.println(data.yVal);
   data.yDist = Distancefind(data.yVal);
   data.xDist = Distancefind(data.xVal);
 
-  Serial.print("X Distance: "); // Sends distance to the console
-  Serial.print(data.xDist);
-  Serial.print(", Y Distance: ");
-  Serial.println(data.yDist);
   data.speedRatio = 1 - map(data.xDist, 0, 512, 0, 500) * .001; // Finds the ratio of the speed of the motors by using the distance of the Joystick from the center, atmost 1:2
   if (data.xVal > 512) { // Turning right
     toSend.motorSpeedRight = map(data.xDist, 0, 512, 0, 180);
