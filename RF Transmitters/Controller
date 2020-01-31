@@ -62,14 +62,17 @@ void loop() {
     toSend.motorSpeedRight = round(toSend.motorSpeedLeft * data.speedRatio);
   }
   radio.write(&toSend, sizeof(toSend));
+  radio.startListening();
+  delay(200);
   if (radio.available()) {
     radio.read(&recieve, sizeof(recieve));
     ledWrite(ledPinA, recieve.ledA);
     ledWrite(ledPinB, recieve.ledB);
   }
+  radio.stopListening();
 }
 
-int Distancefind(int value) {
+int Distancefind(int value) { // Default values are 60 units from center
   int distance;
   if (value > 572) {
     distance = 1024 - value;
@@ -79,7 +82,7 @@ int Distancefind(int value) {
   }
   return distance;
 }
-void ledWrite(int pin, bool value) {
+void ledWrite(int pin, bool value) { // Turns on LED's according to recieved data from boat
   if (value == true) {
     digitalWrite(pin, HIGH);
   }
