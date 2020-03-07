@@ -1,0 +1,105 @@
+#include <nRF24L01.h>
+#include <RF24.h>
+#include<SPI.h>
+#include <Servo.h>
+Servo motorA;
+Servo motorB;
+RF24 radio(9, 10); // CE, CSN
+const short motorA = 5;
+const short motorB = 6;
+unsigned long timeReceive, timeRun; // These variables allow us to determine whether the boat has lost communications with the controller
+const int trigPinA = 5;
+const int echoPinA = 4;
+short durationA; // A and B correspond to each Ultrasonic(US) sensor
+double distanceA;
+float totalDurationA, totalDurationB;
+bool trashDetect = false;
+const byte addressA[] = "10001";
+const byte addressB[] = "01010";
+struct dataReceive {
+  int motorSpeedLeft, motorSpeedRight;
+};
+bool trashLEDA = false;
+struct dataReceive value = {0, 0};
+void setup() {
+  radio.begin();
+  pinMode(motorA, OUTPUT); // Right motor
+  pinMode(motorB, OUTPUT); // Left motor
+  
+
+  //Setting up radio
+  radio.openReadingPipe(1, addressA); // Address open to receive speeds for the motor
+  radio.openWritingPipe(addressB); // Address open to send detection of trash by US Sensor
+  radio.startListening();
+  radio.setPALevel(RF24_PA_MAX);
+  radio.setAutoAck(false);
+  radio.setRetries(0,1);
+  radio.setChannel(125);
+  
+  pinMode(trigPinA, OUTPUT);
+  pinMode(echoPinA, INPUT);
+  digitalWrite(trigPinA, LOW);
+
+}
+
+void loop() {
+  if (radio.available()) {
+    radio.read(&value, sizeof(value)); // Read the data sent by controller
+    timeReceive = millis();
+  }
+  
+  Motorcontrol(); // Control motors according to values
+  
+  durationA = ultrasonicDetection(trigPinA, echoPinA); // Get feedback from the US sensors
+  distanceA = durationA * 0.034 / 2;
+  
+  totalDurationA = totalDuration(distanceA, durationA, totalDurationA); // Get the total duration 
+  
+  
+  if (totalDurationA >= 30) { //Determine whether to turn on the LED's
+    trashLEDA = true;
+  }
+  else {
+    trashLEDA = false;
+  }
+
+  radio.stopListening(); // Begin writing process
+  delayMicroseconds(10);
+  radio.write(&trashLEDA, sizeof(trashLEDA)); // Write data to Controller
+  
+  delayMicroseconds(10);
+  //Set NRF to start listening
+  radio.startListening();
+  
+  timeRun = millis();
+  
+  if (timeRun - timeReceive > 1000) { // If lost communications for more than 1 second, reset to default values
+    analogWrite(5, 0);
+    analogWrite(6, 0);
+  }
+}
+
+void Motorcontrol() {
+  analogWrite(motorA, value.motorSpeedLeft);
+  analogWrite(motorA, value.motorSpeedRight);
+} 
+unsigned int ultrasonicDetection(int trigPin, int echoPin) {
+
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  return pulseIn(echoPin, HIGH);
+}
+float totalDuration(double distance, short duration, float totalDuration) {
+  if (distance <= 4.5) {
+    totalDuration = totalDuration + duration * 0.000001;
+  }
+  else {
+    totalDuration = totalDuration - 2;
+  }
+  return totalDuration;
+}
