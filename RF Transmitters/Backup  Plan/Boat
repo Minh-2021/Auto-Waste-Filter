@@ -1,0 +1,41 @@
+const short motorA = 3;
+const short motorB = 6;
+const short dPinA1 = A0;
+const short dPinA2 = A1;
+const short dPinB1 = A2;
+const short dPinB2 = A3;
+const short speedPinA = A4; // MotorSpeedLeft input
+const short speedPinB = A5; // MotorSpeedRight input
+struct dataReceive {
+  int motorSpeedLeft, motorSpeedRight;
+};
+struct dataReceive value = {0, 0};
+void setup() {
+  pinMode(motorA, OUTPUT); // Right motor
+  pinMode(motorB, OUTPUT); // Left motor
+
+  pinMode(dPinA1, OUTPUT);
+  pinMode(dPinA2, OUTPUT);
+  pinMode(dPinB1, OUTPUT);
+  pinMode(dPinB2, OUTPUT);
+
+  digitalWrite(dPinA1, LOW);
+  digitalWrite(dPinA2, HIGH);
+  digitalWrite(dPinB1, LOW);
+  digitalWrite(dPinB2, HIGH);
+
+  pinMode(speedPinA, INPUT);
+  pinMode(speedPinB, INPUT);
+}
+
+void loop() {
+  value.motorSpeedLeft = analogRead(speedPinA);
+  value.motorSpeedRight = analogRead(speedPinB);
+  Motorcontrol(); // Control motors according to values
+}
+
+void Motorcontrol() {
+
+  analogWrite(motorA, value.motorSpeedRight);
+  analogWrite(motorB, value.motorSpeedLeft);
+}
