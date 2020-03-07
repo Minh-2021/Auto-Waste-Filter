@@ -36,6 +36,6 @@ void loop() {
 
 void Motorcontrol() {
 
-  analogWrite(motorA, value.motorSpeedRight);
-  analogWrite(motorB, value.motorSpeedLeft);
+  analogWrite(motorA, value.motorSpeedLeft);
+  analogWrite(motorB, value.motorSpeedRight);
 }
