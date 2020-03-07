@@ -1,0 +1,71 @@
+const int xPin = A0;
+const int yPin = A1;
+const int ledPinA = 2;
+const int ledPinB = 3;
+const short speedPinA = 5;
+const short speedPinB = 6;
+struct storedData {
+  int xVal, yVal, yDist, xDist;
+  float speedRatio;
+};
+struct toSend { // Data to send structure
+  int motorSpeedLeft, motorSpeedRight;
+};
+struct storedData data = {512, 512, 0, 0, 1}; // Default data
+struct toSend toSend = {0, 0};
+void setup() {
+  pinMode(xPin, INPUT);
+  pinMode(yPin, INPUT);
+
+  pinMode(speedPinA, OUTPUT);
+  pinMode(speedPinB, OUTPUT);
+  analogWrite(speedPinA, 0);
+  analogWrite(speedPinB, 0);
+}
+
+void loop() {
+  data.xVal = analogRead(xPin); // Read the values of the joystick
+  data.yVal = analogRead(yPin);
+
+  Serial.print("X Value: "); // Send values to the console
+  Serial.print(data.xVal);
+
+  Serial.print(", Y Value: ");
+  Serial.println(data.yVal);
+
+  data.yDist = Distancefind(data.yVal);
+  data.xDist = Distancefind(data.xVal);
+
+  Serial.print("X Distance: "); // Sends distance to the console
+  Serial.print(data.xDist);
+  Serial.print(", Y Distance: ");
+  Serial.println(data.yDist);
+
+
+  data.speedRatio = 1 - map(data.xDist, 0, 512, 0, 500) * .001; // Finds the ratio of the speed of the motors by using the distance of the Joystick from the center, atmost 1:2
+  if (data.xVal > 512) { // Turning right
+    toSend.motorSpeedRight = map(data.xDist, 0, 512, 0, 255);
+    toSend.motorSpeedLeft = round(toSend.motorSpeedRight * data.speedRatio);
+  }
+  else if (data.xVal < 512) { // Turning Left
+    toSend.motorSpeedLeft = map(data.xDist, 0 , 512, 0, 255);
+    toSend.motorSpeedRight = round(toSend.motorSpeedLeft * data.speedRatio);
+  }
+
+  analogWrite(speedPinA, toSend.motorSpeedLeft);
+  analogWrite(speedPinB, toSend.motorSpeedRight);
+}
+
+int Distancefind(int value) { // Default values are 60 units from center
+  int distance;
+  if (value > 572) {
+    distance = value - 512;
+  }
+  else if (value < 452) {
+    distance = 512 - value;
+  }
+  else{
+    value = 0
+    }
+  return distance;
+}
